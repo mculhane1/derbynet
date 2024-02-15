@@ -49,7 +49,7 @@ require_once('inc/rounds.inc');
 
 // With $new_round and $classid settled, make the new round (unless it
 // already exists)
-function prepare_new_round($classid, $new_round) {
+function prepare_new_round($classid, $new_round, $chart_type) {
   global $db;
   $new_roundid = read_single_value('SELECT roundid FROM Rounds'
                                    .' WHERE round = :round'
@@ -64,7 +64,7 @@ function prepare_new_round($classid, $new_round) {
     $stmt->execute(array(':roundid' => $new_roundid));
   } else {
     // The usual case: make a whole new round
-    $new_roundid = make_new_round($classid, $new_round);
+    $new_roundid = make_new_round($classid, $new_round, $chart_type);
   }
   return $new_roundid;
 }
@@ -109,7 +109,12 @@ if (isset($_POST['roundid']) && strlen($_POST['roundid']) > 0) {
     $classid = $_POST['classid'];
   }
 
-  $new_roundid = prepare_new_round($classid, 1);
+  $new_roundid = prepare_new_round($classid, 1, 2);
+
+  //7 rounds covers 6 lane double elimination up 200 cars
+  for ($i = 2; $i < 8; ++$i) {
+      prepare_new_round($classid, $i, 2);
+  }
 
   $details = read_single_row('SELECT'
                              .(schema_version() >= 3 ? ' constituents,' : ' \'\' AS constituents,')

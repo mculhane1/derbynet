@@ -2,6 +2,7 @@
 require_once('inc/scenes.inc');
 require_once('inc/roster.inc');
 require_once('inc/schedule_one_round.inc');
+require_once('inc/schedule_elimination.inc');
 require_once('inc/autoadvance.inc');
 require_once('inc/rounds.inc');
 
@@ -57,7 +58,9 @@ function playlist_entry_for($roundid) {
 
 // Finds the next queue entry after the given one.
 function playlist_entry_after($seq) {
-  return read_single_row('SELECT * FROM Playlist'
+  return read_single_row('SELECT Playlist.*, charttype FROM Playlist'
+                         .' INNER JOIN Rounds USING (classid, round)'
+                         .' INNER JOIN Classes USING (classid)'
                          .' WHERE seq = (SELECT MIN(seq) FROM Playlist'
                          .'              WHERE seq > :seq)',
                          array(':seq' => $seq), PDO::FETCH_ASSOC);
@@ -99,9 +102,15 @@ function activate_playlist_entry(&$playlist_entry) {
                                                      $playlist_entry['bucket_limit']);
       }
     } else {
+      if ($playlist_entry['charttype'] == 2){
+          $finalists = calculate_roster_elimination($playlist_entry['classid'],
+                                                    $playlist_entry['round']);
+
+      } else {
       $finalists = calculate_roster_follow_on_round($playlist_entry['classid'],
                                                     $playlist_entry['bucketed'],
                                                     $playlist_entry['bucket_limit']);
+      }
     }
     json_out('finalists', $finalists);
     write_roster_entries($roundid, $playlist_entry['classid'], $finalists);
@@ -112,7 +121,11 @@ function activate_playlist_entry(&$playlist_entry) {
                         array(':roundid' => $roundid)) == 0) {
     $nlanes = get_lane_count();
     if ($nlanes > 0) {
-      schedule_one_round($roundid, $nlanes, $playlist_entry['n_times_per_lane'], /* trace */ false);
+      if ($playlist_entry['charttype'] == 2) {
+        schedule_elimination($roundid, $nlanes, $playlist_entry['n_times_per_lane'], /* trace */ false);
+      } else {
+        schedule_one_round($roundid, $nlanes, $playlist_entry['n_times_per_lane'], /* trace */ false);
+      }
     }
   }
 

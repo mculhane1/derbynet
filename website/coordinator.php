@@ -166,6 +166,11 @@ input.lane-time::-webkit-outer-spin-button {
         <option>5</option>
         <option>6</option>
     </select>
+    <p>Is this an elimination round?</p>
+    <select id="schedule_elimination">
+        <option>False</option>
+        <option>True</option>
+    </select>
 
     <input id="schedule-and-race"
            type="submit" value="Schedule + Race"

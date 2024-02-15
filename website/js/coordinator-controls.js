@@ -179,6 +179,7 @@ function show_schedule_modal(roundid) {
   show_modal("#schedule_modal", function(event) {
     handle_schedule_submit(roundid,
                            $("#schedule_num_rounds").val(),
+                           $("#schedule_elimination").val(),
                            $("input[clicked='true']",
                              $(event.target)).attr("data-race") == 'true');
     return false;
@@ -195,12 +196,13 @@ function mark_clicked(submit_js) {
                 // and then handle_schedule_submit
 }
 
-function handle_schedule_submit(roundid, n_times_per_lane, then_race) {
+function handle_schedule_submit(roundid,  n_times_per_lane, schedule_elimination, then_race) {
     close_modal("#schedule_modal");
     $.ajax(g_action_url,
            {type: 'POST',
             data: {action: 'schedule.generate',
                    roundid: roundid,
+                   elimination: schedule_elimination,
                    n_times_per_lane: n_times_per_lane},
             success: function(data) {
               process_coordinator_poll_json(data);

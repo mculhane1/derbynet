@@ -5,6 +5,7 @@
 
 $roundid = $_POST['roundid'];
 $n_times_per_lane = isset($_POST['n_times_per_lane']) ? $_POST['n_times_per_lane'] : 1;
+$elimination = isset($_POST['elimination']) ? $_POST['elimination'] === 'True' : false;
 
 $trace = !isset($_POST['trace']) ? false : array('trace');
 
@@ -24,6 +25,7 @@ require_once('inc/masterheat.inc');
 require_once('inc/autoadvance.inc');
 require_once('inc/schedule_utils.inc');
 require_once('inc/schedule_one_round.inc');
+require_once('inc/schedule_elimination.inc');
 
 if (have_permission(CONTROL_RACE_PERMISSION)) {
   // $nlanes reports the number of physical lanes, even if some won't be used.
@@ -39,7 +41,7 @@ if (have_permission(CONTROL_RACE_PERMISSION)) {
   } else if (results_exist($roundid)) {
     json_failure('results-exist', 'Race results already exist for this round');
   } else {
-	if (schedule_one_round($roundid, $nlanes, $n_times_per_lane, $trace)) {
+	if ($elimination ? schedule_elimination($roundid, $nlanes, $n_times_per_lane, $trace) : schedule_one_round($roundid, $nlanes, $n_times_per_lane, $trace)) {
       json_success();
       if ($trace) {
         json_out('trace', $trace);

@@ -3,12 +3,13 @@
 require_once('inc/standings.inc');
 require_once('inc/events.inc');
 
-function make_new_round($classid, $roundno) {
+function make_new_round($classid, $roundno, $chart_type) {
   global $db;
   $stmt = $db->prepare('INSERT INTO Rounds(classid, round, phase, charttype)'
-                       .' VALUES(:classid, :roundno, 0, 0)');
+                       .' VALUES(:classid, :roundno, 0, :charttype)');
   $stmt->execute(array(':classid' => $classid,
-                       ':roundno' => $roundno));
+                       ':roundno' => $roundno,
+                       ':charttype' => $chart_type ?? 0));
   $roundid = read_single_value('SELECT roundid FROM Rounds'
                                .' WHERE round = :roundno'
                                .'  AND classid = :classid',
@@ -63,6 +64,117 @@ function calculate_roster_follow_on_round($classid, $bucketed, $bucket_limit) {
   return calculate_roster_from_subgroups($rankids, $bucketed, $bucket_limit);
 }
 
+function calculate_roster_elimination($classid, $round) {
+  global $db;
+
+  //0-1 round
+  switch($round){
+
+    case 2:
+      $stmt = $db->prepare('SELECT racerid FROM Rounds INNER JOIN racechart USING (roundid) where rounds.classid = :classid and round = 1 and finishplace > 1');
+      $stmt->execute(array(':classid' => $classid));
+      $racers = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+	  
+	  $finalists = array();
+      foreach ($racers as $racer) {
+        $finalists[] = array('racerid' => $racer,
+                           'score' => 0);
+      }
+
+      return $finalists;
+      
+    case 3:
+      $stmt = $db->prepare('SELECT racerid FROM Rounds INNER JOIN racechart USING (roundid) where rounds.classid = :classid and round = 1 and finishplace = 1');
+      $stmt->execute(array(':classid' => $classid));
+      $racers = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+	  
+	  $finalists = array();
+      foreach ($racers as $racer) {
+        $finalists[] = array('racerid' => $racer,
+                           'score' => 0);
+      }
+
+      return $finalists;
+
+    case 4:
+      $stmt = $db->prepare('select racerid'
+							.' from Rounds'
+							.'          inner join racechart using (roundid)'
+							.' where rounds.classid = :classid and round = 2 and finishplace = 1'
+							.' union'
+							.' select racerid'
+							.' from Rounds'
+							.'          inner join racechart using (roundid)'
+							.' where rounds.classid = :classid and round = 3 and finishplace > 1;');
+      $stmt->execute(array(':classid' => $classid));
+      $racers = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+	  
+	  $finalists = array();
+      foreach ($racers as $racer) {
+        $finalists[] = array('racerid' => $racer,
+                           'score' => 0);
+      }
+
+      return $finalists;
+      
+    case 5:
+      $stmt = $db->prepare('SELECT racerid FROM Rounds INNER JOIN racechart USING (roundid) where rounds.classid = :classid and round = 3 and finishplace = 1');
+      $stmt->execute(array(':classid' => $classid));
+      $racers = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+	  
+	  $finalists = array();
+      foreach ($racers as $racer) {
+        $finalists[] = array('racerid' => $racer,
+                           'score' => 0);
+      }
+
+      return $finalists;
+
+    case 6:
+      $stmt = $db->prepare('select racerid'
+							.' from Rounds'
+							.'          inner join racechart using (roundid)'
+							.' where rounds.classid = :classid and round = 4 and finishplace = 1'
+							.' union'
+							.' select racerid'
+							.' from Rounds'
+							.'          inner join racechart using (roundid)'
+							.' where rounds.classid = :classid and round = 5 and finishplace > 1;');
+      $stmt->execute(array(':classid' => $classid));
+      $racers = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+	  
+	  $finalists = array();
+      foreach ($racers as $racer) {
+        $finalists[] = array('racerid' => $racer,
+                           'score' => 0);
+      }
+
+      return $finalists;
+
+    case 7:
+      $stmt = $db->prepare('select racerid'
+							.' from Rounds'
+							.'          inner join racechart using (roundid)'
+							.' where rounds.classid = :classid and round = 5 and finishplace = 1'
+							.' union'
+							.' select racerid'
+							.' from Rounds'
+							.'          inner join racechart using (roundid)'
+							.' where rounds.classid = :classid and round = 6 and finishplace = 1;');
+      $stmt->execute(array(':classid' => $classid));
+      $racers = $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
+	  
+	  $finalists = array();
+      foreach ($racers as $racer) {
+        $finalists[] = array('racerid' => $racer,
+                           'score' => 0);
+      }
+      return $finalists;
+
+  }
+
+  
+}
 
 // $bucket_keys: An array of standings key symbols
 // $bucket_multiplier is 0 for no bucketing (take top overall), or 1 for bucketing by key
